@@ -1,7 +1,18 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/Alekssasho/GopherInvaders/client"
+	"github.com/Alekssasho/GopherInvaders/server"
+)
 
 func main() {
-	fmt.Printf("Hello World\n")
+	go func() {
+		fmt.Println("Server starting")
+		server.StartServer()
+	}()
+
+	fmt.Println("Client starting")
+	client.StartClient()
 }
