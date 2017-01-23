@@ -11,7 +11,7 @@ import (
 
 // Starts game server
 func StartServer() {
-	service := "127.0.0.1:1234"
+	service := "0.0.0.0:1234"
 	tcpAddr, err := net.ResolveTCPAddr("tcp", service)
 	checkError(err)
 
@@ -27,18 +27,24 @@ func StartServer() {
 		fmt.Println("server connection made")
 
 		encoder := gob.NewEncoder(conn)
-		decoder := gob.NewDecoder(conn)
+		//decoder := gob.NewDecoder(conn)
 
-		for n := 0; n < 10; n++ {
-			var entity core.GameEntity
-			fmt.Println("server receive data")
-			err = decoder.Decode(&entity)
-			checkError(err)
-			fmt.Println(entity.String())
-			fmt.Println("server send data")
-			err = encoder.Encode(entity)
-			checkError(err)
+		world := core.NewGameWorld()
+		world.AddNewPlayer()
+
+		for {
+			world.Update()
+			encoder.Encode(world.PlayerShips[0])
 		}
+
+		// for n := 0; n < 10; n++ {
+		// 	err = decoder.Decode(&entity)
+		// 	checkError(err)
+		// 	fmt.Println(entity.String())
+		// 	fmt.Println("server send data")
+		// 	err = encoder.Encode(entity)
+		// 	checkError(err)
+		// }
 
 		conn.Close()
 	}
