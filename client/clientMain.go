@@ -16,41 +16,10 @@ import (
 	"github.com/Alekssasho/GopherInvaders/core"
 )
 
-// func StartClient() {
-// 	// newEntity := core.GameEntity{BasicEntity: ecs.NewBasic()}
-// 	// newEntity.SpaceComponent = common.SpaceComponent{
-// 	// 	Position: engo.Point{10, 10},
-// 	// 	Width:    64,
-// 	// 	Height:   64,
-// 	// }
-// 	//newEntity := core.GameEntity{ID: 0, X: 10.0, Y: 52.0}
-// 	newEntity := core.List{}
-// 	newEntity.Items = make([]core.GameEntity, 0, 2)
-// 	newEntity.Items = append(newEntity.Items, core.GameEntity{ID: 0, X: 10.0, Y: 52.0})
-// 	newEntity.Items = append(newEntity.Items, core.GameEntity{ID: 1, X: 30.0, Y: 22.0})
-
-// 	conn, err := net.Dial("tcp", "127.0.0.1:1234")
-// 	checkError(err)
-
-// 	fmt.Println("client connection made")
-
-// 	encoder := gob.NewEncoder(conn)
-// 	decoder := gob.NewDecoder(conn)
-
-// 	for n := 0; n < 10; n++ {
-// 		fmt.Println("client send data")
-// 		err := encoder.Encode(newEntity)
-// 		checkError(err)
-// 		var entity core.List
-// 		fmt.Println("client receive data")
-// 		err = decoder.Decode(&entity)
-// 		checkError(err)
-// 		fmt.Println(entity.String())
-// 	}
-
-// 	os.Exit(0)
-
-// }
+const (
+	updaterPriority = 10
+	inputPriority   = 100 // Input needs to happen begore update
+)
 
 func checkError(err error) {
 	if err != nil {
@@ -68,14 +37,23 @@ func (*gameScene) Preload() {
 	engo.Files.Load("textures/ship.png")
 }
 func (scene *gameScene) Setup(world *ecs.World) {
+	engo.Input.RegisterButton("MoveLeft", engo.ArrowLeft)
+	engo.Input.RegisterButton("MoveRight", engo.ArrowRight)
+	engo.Input.RegisterButton("MoveUp", engo.ArrowUp)
+	engo.Input.RegisterButton("MoveDown", engo.ArrowDown)
+	// engo.Input.RegisterButton("Fire", engo.Space)
+
 	world.AddSystem(&common.RenderSystem{})
 
 	// setup the Updater
-	updater := &EntityUpdater{decoder: gob.NewDecoder(scene.serverConnection)}
+	updater := &entityUpdater{decoder: gob.NewDecoder(scene.serverConnection)}
 	world.AddSystem(updater)
 
+	inputController := &inputController{encoder: gob.NewEncoder(scene.serverConnection)}
+	world.AddSystem(inputController)
+
 	// add the player spaceship
-	ship := GameEntity{BasicEntity: ecs.NewBasic()}
+	ship := gameEntity{BasicEntity: ecs.NewBasic()}
 	ship.SpaceComponent = common.SpaceComponent{
 		Position: engo.Point{X: 100, Y: 300},
 		Width:    128,
@@ -95,7 +73,7 @@ func (scene *gameScene) Setup(world *ecs.World) {
 		switch sys := system.(type) {
 		case *common.RenderSystem:
 			sys.Add(&ship.BasicEntity, &ship.RenderComponent, &ship.SpaceComponent)
-		case *EntityUpdater:
+		case *entityUpdater:
 			sys.Add(&ship)
 		}
 	}
@@ -103,23 +81,24 @@ func (scene *gameScene) Setup(world *ecs.World) {
 	common.SetBackground(color.White)
 }
 
-type GameEntity struct {
+type gameEntity struct {
 	ecs.BasicEntity
 	common.SpaceComponent
 	common.RenderComponent
 }
 
-type EntityUpdater struct {
-	entities []*GameEntity
+type entityUpdater struct {
+	entities []*gameEntity
 	decoder  *gob.Decoder
 }
 
-func (*EntityUpdater) Remove(ecs.BasicEntity) {}
-func (e *EntityUpdater) Add(entity *GameEntity) {
+func (*entityUpdater) Remove(ecs.BasicEntity) {}
+func (e *entityUpdater) Add(entity *gameEntity) {
 	e.entities = append(e.entities, entity)
 }
 
-func (e *EntityUpdater) Update(dt float32) {
+func (e *entityUpdater) Update(dt float32) {
+	//fmt.Println("[Client] Receiving state")
 	var newPosition core.Spaceship
 	e.decoder.Decode(&newPosition)
 
@@ -129,8 +108,57 @@ func (e *EntityUpdater) Update(dt float32) {
 	}
 }
 
-func (e *EntityUpdater) New(*ecs.World) {
-	e.entities = make([]*GameEntity, 0, 10)
+func (e *entityUpdater) New(*ecs.World) {
+	e.entities = make([]*gameEntity, 0, 10)
+}
+
+func (e *entityUpdater) Priority() int {
+	return updaterPriority
+}
+
+type inputController struct {
+	entity  *gameEntity
+	encoder *gob.Encoder
+}
+
+func (*inputController) Remove(ecs.BasicEntity) {}
+func (e *inputController) Add(entity *gameEntity) {
+	e.entity = entity
+}
+
+func (e *inputController) Update(dt float32) {
+	dir := core.Still
+
+	if engo.Input.Button("MoveLeft").Down() {
+		dir = core.Left
+	} else if engo.Input.Button("MoveRight").Down() {
+		dir = core.Right
+	}
+
+	if engo.Input.Button("MoveUp").Down() {
+		if dir == core.Left {
+			dir = core.UpLeft
+		} else if dir == core.Right {
+			dir = core.UpRight
+		} else {
+			dir = core.Up
+		}
+	} else if engo.Input.Button("MoveDown").Down() {
+		if dir == core.Left {
+			dir = core.DownLeft
+		} else if dir == core.Right {
+			dir = core.DownRight
+		} else {
+			dir = core.Down
+		}
+	}
+
+	//fmt.Println("[Client] Sending direction", dir)
+	e.encoder.Encode(dir)
+}
+
+func (e *inputController) Priority() int {
+	return inputPriority
 }
 
 func StartClient() {

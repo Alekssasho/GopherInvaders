@@ -6,6 +6,20 @@ type Spaceship struct {
 	X, Y float32
 }
 
+type SpaceshipDirection int
+
+const (
+	Still SpaceshipDirection = iota
+	Up
+	Down
+	Left
+	Right
+	UpRight
+	UpLeft
+	DownRight
+	DownLeft
+)
+
 type GameWorld struct {
 	PlayerShips []Spaceship
 }
@@ -18,15 +32,36 @@ func NewGameWorld() GameWorld {
 }
 
 func (world *GameWorld) AddNewPlayer() {
-	world.PlayerShips = append(world.PlayerShips, Spaceship{ID: 0, X: 100, Y: 200})
+	world.PlayerShips = append(world.PlayerShips, Spaceship{ID: 0, X: 100, Y: 0})
 }
 
-func (world *GameWorld) Update() {
+func (world *GameWorld) Update(dirs []SpaceshipDirection) {
+	const velocity float32 = 5
+	const diagonalVelocity float32 = velocity / 1.4
+
 	for i, _ := range world.PlayerShips {
 		ship := &world.PlayerShips[i]
-		ship.X += 5
-		if ship.X >= 700 {
-			ship.X = 10
+		switch dirs[i] {
+		case Up:
+			ship.Y -= velocity
+		case UpLeft:
+			ship.X -= diagonalVelocity
+			ship.Y -= diagonalVelocity
+		case UpRight:
+			ship.X += diagonalVelocity
+			ship.Y -= diagonalVelocity
+		case Down:
+			ship.Y += velocity
+		case DownLeft:
+			ship.X -= diagonalVelocity
+			ship.Y += diagonalVelocity
+		case DownRight:
+			ship.X += diagonalVelocity
+			ship.Y += diagonalVelocity
+		case Left:
+			ship.X -= velocity
+		case Right:
+			ship.X += velocity
 		}
 	}
 }

@@ -24,16 +24,27 @@ func StartServer() {
 			continue
 		}
 
-		fmt.Println("server connection made")
+		fmt.Println("[Server] Connection made")
 
 		encoder := gob.NewEncoder(conn)
-		//decoder := gob.NewDecoder(conn)
+		decoder := gob.NewDecoder(conn)
 
 		world := core.NewGameWorld()
 		world.AddNewPlayer()
 
 		for {
-			world.Update()
+			// first we receive input from all clients
+			// TODO: generilize for multiple clients
+			//fmt.Println("[Server] Receive dir")
+			dirs := make([]core.SpaceshipDirection, 1)
+			decoder.Decode(&dirs[0])
+
+			// second update the world
+			//fmt.Println("[Server] Update world")
+			world.Update(dirs)
+
+			// third send updated state to clients
+			//fmt.Println("[Server] Send state")
 			encoder.Encode(world.PlayerShips[0])
 		}
 
