@@ -20,19 +20,44 @@ const (
 	DownLeft
 )
 
+type EntityType int
+
+const (
+	PlayerShip EntityType = iota
+	EnemyShip
+	Ammo
+)
+
+type EntityUpdate struct {
+	Type EntityType
+	ID   uint64
+}
+
 type GameWorld struct {
 	PlayerShips []Spaceship
+
+	NewEntities     []EntityUpdate
+	DeletedEntities []EntityUpdate
+
+	nextId uint64
 }
 
 func NewGameWorld() GameWorld {
 	result := GameWorld{}
 	result.PlayerShips = make([]Spaceship, 0, 2)
+	result.NewEntities = make([]EntityUpdate, 0)
+	result.DeletedEntities = make([]EntityUpdate, 0)
+	result.nextId = 0
 
 	return result
 }
 
-func (world *GameWorld) AddNewPlayer() {
-	world.PlayerShips = append(world.PlayerShips, Spaceship{ID: 0, X: 100, Y: 0})
+func (world *GameWorld) AddNewPlayer() (id uint64) {
+	id = world.nextId
+	world.PlayerShips = append(world.PlayerShips, Spaceship{ID: id, X: 100, Y: 0})
+	world.NewEntities = append(world.NewEntities, EntityUpdate{Type: PlayerShip, ID: id})
+	world.nextId++
+	return
 }
 
 func (world *GameWorld) Update(dirs []SpaceshipDirection) {
@@ -66,28 +91,7 @@ func (world *GameWorld) Update(dirs []SpaceshipDirection) {
 	}
 }
 
-// type List struct {
-// 	Items []GameEntity
-// }
-
-// func (g *GameEntity) String() string {
-// 	s := strconv.Itoa(int(g.ID))
-// 	s += " "
-// 	s += strconv.FormatFloat(float64(g.X), 'f', 2, 32)
-// 	s += " "
-// 	s += strconv.FormatFloat(float64(g.Y), 'f', 2, 32)
-
-// 	return s
-// }
-
-// func (l *List) String() string {
-// 	s := strconv.Itoa(len(l.Items))
-// 	s += " { "
-// 	for _, i := range l.Items {
-// 		s += i.String()
-// 		s += " "
-// 	}
-// 	s += "}"
-
-// 	return s
-// }
+func (world *GameWorld) ClearUpdates() {
+	world.NewEntities = make([]EntityUpdate, 0)
+	world.DeletedEntities = make([]EntityUpdate, 0)
+}
