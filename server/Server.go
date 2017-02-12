@@ -15,7 +15,8 @@ type player struct {
 	id      uint64
 }
 
-// Starts game server
+// StartServer starts the game server
+// it receive the number of players to wait before starting the world
 func StartServer(numPlayers int) {
 	fmt.Println("[Server] starting")
 	service := "0.0.0.0:1234"
