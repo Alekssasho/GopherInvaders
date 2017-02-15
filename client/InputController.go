@@ -9,16 +9,13 @@ import (
 )
 
 type inputController struct {
-	entity  *gameEntity
 	encoder *gob.Encoder
 }
 
-func (*inputController) Remove(ecs.BasicEntity) {}
-func (e *inputController) Add(entity *gameEntity) {
-	e.entity = entity
+func (i *inputController) Remove(basic ecs.BasicEntity) {
 }
 
-func (e *inputController) Update(dt float32) {
+func (i *inputController) Update(dt float32) {
 	dir := core.Still
 
 	if engo.Input.Button("MoveLeft").Down() {
@@ -46,9 +43,9 @@ func (e *inputController) Update(dt float32) {
 	}
 
 	//fmt.Println("[Client] Sending direction", dir)
-	e.encoder.Encode(dir)
+	i.encoder.Encode(dir)
 }
 
-func (e *inputController) Priority() int {
+func (i *inputController) Priority() int {
 	return inputPriority
 }

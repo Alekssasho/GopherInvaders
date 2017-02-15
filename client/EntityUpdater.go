@@ -16,7 +16,15 @@ type entityUpdater struct {
 	world    *ecs.World
 }
 
-func (*entityUpdater) Remove(ecs.BasicEntity) {}
+func (e *entityUpdater) Remove(basic ecs.BasicEntity) {
+	for index, entity := range e.entities {
+		if entity.ID() == basic.ID() {
+			delete(e.entities, index)
+			break
+		}
+	}
+}
+
 func (e *entityUpdater) Add(entity *gameEntity, id uint64) {
 	e.entities[id] = entity
 }
@@ -57,14 +65,26 @@ func (e *entityUpdater) Update(dt float32) {
 	}
 
 	// delete removed entitites
-	// TODO: implement me
+	for _, en := range newWorld.DeletedGameObjects {
+		entity := e.entities[en.ID]
+		e.world.RemoveEntity(entity.BasicEntity)
+	}
 
 	// update entities
 	for _, player := range newWorld.PlayerShips {
-		space := &e.entities[player.ID].SpaceComponent
-		space.Position.X = player.X
-		space.Position.Y = player.Y
+		e.updateEntity(player.ObjectDimensions)
 	}
+
+	for _, ammo := range newWorld.PlayerAmmos {
+		e.updateEntity(ammo.ObjectDimensions)
+	}
+
+}
+
+func (e *entityUpdater) updateEntity(obj core.ObjectDimensions) {
+	space := &e.entities[obj.ID].SpaceComponent
+	space.Position.X = obj.X * worldScaleX
+	space.Position.Y = obj.Y * worldScaleY
 }
 
 func (e *entityUpdater) New(w *ecs.World) {

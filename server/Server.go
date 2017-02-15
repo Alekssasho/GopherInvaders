@@ -47,6 +47,7 @@ func StartServer(numPlayers int) {
 	}
 
 	fmt.Println("[Server] Starting game")
+	world.Start()
 	for {
 		// first we receive input from all client
 		//fmt.Println("[Server] Receive dir")
@@ -67,6 +68,7 @@ func StartServer(numPlayers int) {
 
 		world.ClearUpdates()
 	}
+	world.Stop()
 }
 
 func checkError(err error) {

@@ -9,6 +9,16 @@ import (
 	"github.com/Alekssasho/GopherInvaders/core"
 )
 
+const (
+	windowWidth  = 800.0
+	windowHeight = 640.0
+)
+
+const (
+	worldScaleX = windowWidth / core.WorldWidth
+	worldScaleY = windowHeight / core.WorldHeight
+)
+
 // StartClient starts the game client. It receives ip of the server to connect to
 func StartClient(serverIP string) {
 	fmt.Println("[Client] starting with server ", serverIP)
@@ -19,17 +29,17 @@ func StartClient(serverIP string) {
 	}
 
 	gameScene := gameScene{serverConnection: conn}
-
 	// initialize entity create map
 	entityCreateParamsMap = map[core.GameObjectType]entityCreateParams{
-		core.PlayerShip: entityCreateParams{texture: "textures/ship.png", width: 64, height: 64},
+		core.PlayerShip: entityCreateParams{texture: "textures/ship.png", width: core.PlayerShipWidth * worldScaleX, height: core.PlayerShipHeight * worldScaleY},
+		core.Ammo:       entityCreateParams{texture: "textures/ship.png", width: core.AmmoWidth * worldScaleX, height: core.AmmoHeight * worldScaleY},
 		// TODO: add other
 	}
 
 	opts := engo.RunOptions{
 		Title:  "Gopher Invaders",
-		Width:  800,
-		Height: 640,
+		Width:  windowWidth,
+		Height: windowHeight,
 	}
 
 	engo.Run(opts, &gameScene)

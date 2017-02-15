@@ -30,5 +30,5 @@ func main() {
 		client.StartClient(*serverIP)
 	}
 
-	wg.Wait()
+	//wg.Wait()
 }
