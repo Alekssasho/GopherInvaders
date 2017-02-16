@@ -54,9 +54,11 @@ func StartServer(numPlayers int) {
 	for len(world.PlayerShips) > 0 {
 		// first we receive input from all client
 		//fmt.Println("[Server] Receive dir")
-		dirs := make([]core.SpaceshipDirection, numPlayers)
-		for i, pl := range players {
-			pl.decoder.Decode(&dirs[i])
+		dirs := make(map[uint64]core.SpaceshipDirection, numPlayers)
+		var d core.SpaceshipDirection
+		for _, pl := range players {
+			pl.decoder.Decode(&d)
+			dirs[pl.id] = d
 		}
 
 		// second update the world

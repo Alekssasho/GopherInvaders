@@ -87,7 +87,7 @@ func (world *GameWorld) getNextID() (id uint64) {
 // Update updates the game world
 // it receives array of directions which the player spaceship took
 // and updates every object positions
-func (world *GameWorld) Update(dirs []SpaceshipDirection, delta float32) {
+func (world *GameWorld) Update(dirs map[uint64]SpaceshipDirection, delta float32) {
 	for i := range world.PlayerShips {
 		select {
 		case <-world.playerShipData[i].fire:
@@ -97,7 +97,7 @@ func (world *GameWorld) Update(dirs []SpaceshipDirection, delta float32) {
 			world.NewGameObjects = append(world.NewGameObjects, GameObjectUpdate{Type: PlayerAmmo, ID: id})
 		default:
 		}
-		movePlayerShip(&world.PlayerShips[i], dirs[i], delta)
+		movePlayerShip(&world.PlayerShips[i], dirs[world.PlayerShips[i].ID], delta)
 	}
 
 	if len(world.EnemyShips) == 0 {
