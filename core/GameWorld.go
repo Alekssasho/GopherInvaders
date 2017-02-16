@@ -13,8 +13,10 @@ const (
 	PlayerShip GameObjectType = iota
 	// EnemyShip enemy ships
 	EnemyShip
-	// Ammo weapon ammonutions
-	Ammo
+	// PlayerAmmo weapon ammonutions from player
+	PlayerAmmo
+	// EnemyAmmo weapon ammonutions from enemy
+	EnemyAmmo
 )
 
 // constants for how big is the world
@@ -35,6 +37,7 @@ type GameWorld struct {
 	PlayerAmmos []Projectile
 
 	EnemyShips []Spaceship
+	EnemyAmmos []Projectile
 
 	NewGameObjects     []GameObjectUpdate
 	DeletedGameObjects []GameObjectUpdate
@@ -91,7 +94,7 @@ func (world *GameWorld) Update(dirs []SpaceshipDirection, delta float32) {
 			obj := &world.PlayerShips[i].ObjectDimensions
 			id := world.getNextID()
 			world.PlayerAmmos = append(world.PlayerAmmos, newProjectile(id, obj.X+obj.width/2-AmmoWidth/2, obj.Y, PlayerAmmo, -600))
-			world.NewGameObjects = append(world.NewGameObjects, GameObjectUpdate{Type: Ammo, ID: id})
+			world.NewGameObjects = append(world.NewGameObjects, GameObjectUpdate{Type: PlayerAmmo, ID: id})
 		default:
 		}
 		movePlayerShip(&world.PlayerShips[i], dirs[i], delta)
@@ -120,9 +123,9 @@ func (world *GameWorld) Update(dirs []SpaceshipDirection, delta float32) {
 				world.enemyShipData = append(world.enemyShipData, enemyShipData{startX: enemy.X, delta: rowDelta})
 				world.NewGameObjects = append(world.NewGameObjects, GameObjectUpdate{Type: EnemyShip, ID: enemy.ID})
 				currentX += spaceBetweenShip + EnemyWidth
+				world.enemyShipData[len(world.enemyShipData)-1].startSpawner()
 			}
 		}
-		world.currentTime = 0.0
 	} else {
 		// enemy moves like a sin function
 		world.currentTime += delta
@@ -130,6 +133,15 @@ func (world *GameWorld) Update(dirs []SpaceshipDirection, delta float32) {
 			obj := &world.EnemyShips[i]
 			obj.Y += 15.0 * delta
 			obj.X = world.enemyShipData[i].startX + float32(math.Sin(float64(world.currentTime*0.5+world.enemyShipData[i].delta)))*2*EnemyWidth
+
+			select {
+			case <-world.enemyShipData[i].fire:
+				obj := &world.EnemyShips[i].ObjectDimensions
+				id := world.getNextID()
+				world.EnemyAmmos = append(world.EnemyAmmos, newProjectile(id, obj.X+obj.width/2-AmmoWidth/2, obj.Y+EnemyHeight, EnemyAmmo, 150))
+				world.NewGameObjects = append(world.NewGameObjects, GameObjectUpdate{Type: EnemyAmmo, ID: id})
+			default:
+			}
 		}
 	}
 
@@ -152,6 +164,7 @@ func (world *GameWorld) Update(dirs []SpaceshipDirection, delta float32) {
 				if checkCollision(&world.PlayerAmmos[j].ObjectDimensions, &world.EnemyShips[enemyIndex].ObjectDimensions) {
 					destroy = true
 					world.PlayerScore++
+					world.enemyShipData[enemyIndex].cancelFire <- struct{}{}
 					world.DeletedGameObjects = append(world.DeletedGameObjects, GameObjectUpdate{Type: EnemyShip, ID: world.EnemyShips[enemyIndex].ID})
 					world.EnemyShips = world.EnemyShips[:enemyIndex+copy(world.EnemyShips[enemyIndex:], world.EnemyShips[enemyIndex+1:])]
 					world.enemyShipData = world.enemyShipData[:enemyIndex+copy(world.enemyShipData[enemyIndex:], world.enemyShipData[enemyIndex+1:])]
@@ -162,7 +175,35 @@ func (world *GameWorld) Update(dirs []SpaceshipDirection, delta float32) {
 
 		if destroy {
 			world.PlayerAmmos = world.PlayerAmmos[:j+copy(world.PlayerAmmos[j:], world.PlayerAmmos[j+1:])]
-			world.DeletedGameObjects = append(world.DeletedGameObjects, GameObjectUpdate{Type: Ammo, ID: id})
+			world.DeletedGameObjects = append(world.DeletedGameObjects, GameObjectUpdate{Type: PlayerAmmo, ID: id})
+			deleted++
+		}
+	}
+
+	deleted = 0
+	for i := range world.EnemyAmmos {
+		j := i - deleted
+		moveProjectile(&world.EnemyAmmos[j], delta)
+		// check for projectiles outside the world
+		y := world.EnemyAmmos[j].Y
+		id := world.EnemyAmmos[j].ID
+		destroy := y > WorldHeight+AmmoHeight
+		if !destroy {
+			// check collision with players
+			for playerIndex := range world.PlayerShips {
+				if checkCollision(&world.EnemyAmmos[j].ObjectDimensions, &world.PlayerShips[playerIndex].ObjectDimensions) {
+					destroy = true
+					world.DeletedGameObjects = append(world.DeletedGameObjects, GameObjectUpdate{Type: PlayerShip, ID: world.PlayerShips[playerIndex].ID})
+					world.PlayerShips = world.PlayerShips[:playerIndex+copy(world.PlayerShips[playerIndex:], world.PlayerShips[playerIndex+1:])]
+					world.playerShipData = world.playerShipData[:playerIndex+copy(world.playerShipData[playerIndex:], world.playerShipData[playerIndex+1:])]
+					break
+				}
+			}
+		}
+
+		if destroy {
+			world.EnemyAmmos = world.EnemyAmmos[:j+copy(world.EnemyAmmos[j:], world.EnemyAmmos[j+1:])]
+			world.DeletedGameObjects = append(world.DeletedGameObjects, GameObjectUpdate{Type: EnemyAmmo, ID: id})
 			deleted++
 		}
 	}

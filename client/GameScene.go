@@ -20,6 +20,7 @@ func (*gameScene) Preload() {
 	engo.Files.Load("textures/bullet.png")
 	engo.Files.Load("textures/starfield.png")
 	engo.Files.Load("textures/gopher.png")
+	engo.Files.Load("textures/bomb.png")
 	engo.Files.Load("fonts/DroidSerif.ttf")
 }
 

@@ -24,6 +24,7 @@ type entityUpdater struct {
 	decoder     *gob.Decoder
 	world       *ecs.World
 	fontUpdater *fontUpdater
+	stop        bool
 }
 
 func (e *entityUpdater) Remove(basic ecs.BasicEntity) {
@@ -40,10 +41,34 @@ func (e *entityUpdater) Add(entity *gameEntity, id uint64) {
 }
 
 func (e *entityUpdater) Update(dt float32) {
+	if e.stop {
+		return
+	}
+
 	//fmt.Println("[Client] Receiving state")
-	//var newPosition core.Spaceship
 	var newWorld core.GameWorld
-	e.decoder.Decode(&newWorld)
+	err := e.decoder.Decode(&newWorld)
+	if err != nil {
+		e.world.RemoveEntity(e.fontUpdater.BasicEntity)
+		var str string
+		if txt, ok := e.fontUpdater.Drawable.(common.Text); ok {
+			str = "Final " + txt.Text
+		}
+		e.fontUpdater.Drawable = common.Text{
+			Text: str,
+			Font: &e.fontUpdater.font,
+		}
+		e.fontUpdater.SpaceComponent.Position = engo.Point{X: windowWidth/2 - 30, Y: windowHeight/2 - 20}
+		for _, system := range e.world.Systems() {
+			switch sys := system.(type) {
+			case *common.RenderSystem:
+				sys.Add(&e.fontUpdater.BasicEntity, &e.fontUpdater.RenderComponent, &e.fontUpdater.SpaceComponent)
+			}
+		}
+
+		e.stop = true
+		return
+	}
 
 	e.world.RemoveEntity(e.fontUpdater.BasicEntity)
 	e.fontUpdater.Drawable = common.Text{
@@ -105,6 +130,9 @@ func (e *entityUpdater) Update(dt float32) {
 		e.updateEntity(ammo.ObjectDimensions)
 	}
 
+	for _, ammo := range newWorld.EnemyAmmos {
+		e.updateEntity(ammo.ObjectDimensions)
+	}
 }
 
 func (e *entityUpdater) updateEntity(obj core.ObjectDimensions) {
@@ -116,6 +144,7 @@ func (e *entityUpdater) updateEntity(obj core.ObjectDimensions) {
 func (e *entityUpdater) New(w *ecs.World) {
 	e.entities = make(map[uint64]*gameEntity)
 	e.world = w
+	e.stop = false
 }
 
 func (e *entityUpdater) Priority() int {

@@ -29,20 +29,11 @@ const (
 	DownLeft
 )
 
-// ProjectileType enum type for ammo type
-type ProjectileType int
-
-// Different kind of ammos
-const (
-	PlayerAmmo = iota
-	EnemyAmmo
-)
-
 // Projectile is ammo created by the ships
 type Projectile struct {
 	ObjectDimensions
 
-	Type     ProjectileType
+	Type     GameObjectType
 	velocity float32
 	// TODO: add different types of ammo
 }
@@ -61,7 +52,7 @@ func newPlayerShip(id uint64, x, y float32) Spaceship {
 	return Spaceship{ObjectDimensions: ObjectDimensions{ID: id, X: x, Y: y, width: PlayerShipWidth, height: PlayerShipHeight}}
 }
 
-func newProjectile(id uint64, x, y float32, t ProjectileType, vel float32) Projectile {
+func newProjectile(id uint64, x, y float32, t GameObjectType, vel float32) Projectile {
 	return Projectile{ObjectDimensions: ObjectDimensions{ID: id, X: x, Y: y, width: AmmoWidth, height: AmmoHeight}, Type: t, velocity: vel}
 }
 

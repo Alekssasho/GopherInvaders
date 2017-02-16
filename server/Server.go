@@ -51,7 +51,7 @@ func StartServer(numPlayers int) {
 	fmt.Println("[Server] Starting game")
 	world.Start()
 	currentTime := time.Now()
-	for {
+	for len(world.PlayerShips) > 0 {
 		// first we receive input from all client
 		//fmt.Println("[Server] Receive dir")
 		dirs := make([]core.SpaceshipDirection, numPlayers)
