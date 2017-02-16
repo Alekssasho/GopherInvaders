@@ -4,16 +4,26 @@ import (
 	"encoding/gob"
 	"log"
 
+	"strconv"
+
 	"engo.io/ecs"
 	"engo.io/engo"
 	"engo.io/engo/common"
 	"github.com/Alekssasho/GopherInvaders/core"
 )
 
+type fontUpdater struct {
+	ecs.BasicEntity
+	common.RenderComponent
+	common.SpaceComponent
+	font common.Font
+}
+
 type entityUpdater struct {
-	entities map[uint64]*gameEntity
-	decoder  *gob.Decoder
-	world    *ecs.World
+	entities    map[uint64]*gameEntity
+	decoder     *gob.Decoder
+	world       *ecs.World
+	fontUpdater *fontUpdater
 }
 
 func (e *entityUpdater) Remove(basic ecs.BasicEntity) {
@@ -34,6 +44,18 @@ func (e *entityUpdater) Update(dt float32) {
 	//var newPosition core.Spaceship
 	var newWorld core.GameWorld
 	e.decoder.Decode(&newWorld)
+
+	e.world.RemoveEntity(e.fontUpdater.BasicEntity)
+	e.fontUpdater.Drawable = common.Text{
+		Text: "Score: " + strconv.Itoa(newWorld.PlayerScore),
+		Font: &e.fontUpdater.font,
+	}
+	for _, system := range e.world.Systems() {
+		switch sys := system.(type) {
+		case *common.RenderSystem:
+			sys.Add(&e.fontUpdater.BasicEntity, &e.fontUpdater.RenderComponent, &e.fontUpdater.SpaceComponent)
+		}
+	}
 
 	// add new entities
 	for _, en := range newWorld.NewGameObjects {
@@ -73,6 +95,10 @@ func (e *entityUpdater) Update(dt float32) {
 	// update entities
 	for _, player := range newWorld.PlayerShips {
 		e.updateEntity(player.ObjectDimensions)
+	}
+
+	for _, enemy := range newWorld.EnemyShips {
+		e.updateEntity(enemy.ObjectDimensions)
 	}
 
 	for _, ammo := range newWorld.PlayerAmmos {

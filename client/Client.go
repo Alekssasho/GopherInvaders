@@ -32,6 +32,7 @@ func StartClient(serverIP string) {
 	// initialize entity create map
 	entityCreateParamsMap = map[core.GameObjectType]entityCreateParams{
 		core.PlayerShip: entityCreateParams{texture: "textures/ship.png", width: core.PlayerShipWidth * worldScaleX, height: core.PlayerShipHeight * worldScaleY},
+		core.EnemyShip:  entityCreateParams{texture: "textures/gopher.png", width: core.EnemyWidth * worldScaleX, height: core.EnemyHeight * worldScaleY},
 		core.Ammo:       entityCreateParams{texture: "textures/bullet.png", width: core.AmmoWidth * worldScaleX, height: core.AmmoHeight * worldScaleY},
 		// TODO: add other
 	}

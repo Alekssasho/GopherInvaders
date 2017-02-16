@@ -49,10 +49,12 @@ type Projectile struct {
 
 // constants for how big are objects
 const (
-	PlayerShipWidth  = 64
-	PlayerShipHeight = 64
-	AmmoWidth        = 12
-	AmmoHeight       = 12
+	PlayerShipWidth  float32 = 64.0
+	PlayerShipHeight float32 = 64.0
+	AmmoWidth        float32 = 10.0
+	AmmoHeight       float32 = 14.0
+	EnemyWidth       float32 = 40.0
+	EnemyHeight      float32 = 40.0
 )
 
 func newPlayerShip(id uint64, x, y float32) Spaceship {
@@ -63,36 +65,41 @@ func newProjectile(id uint64, x, y float32, t ProjectileType, vel float32) Proje
 	return Projectile{ObjectDimensions: ObjectDimensions{ID: id, X: x, Y: y, width: AmmoWidth, height: AmmoHeight}, Type: t, velocity: vel}
 }
 
+func newEnemyShip(id uint64, x, y float32) Spaceship {
+	return Spaceship{ObjectDimensions: ObjectDimensions{ID: id, X: x, Y: y, width: EnemyWidth, height: EnemyHeight}}
+}
+
+// This is per second
 const (
-	velocity         float32 = 5
+	velocity         float32 = 250
 	diagonalVelocity float32 = velocity / 1.4
 )
 
-func movePlayerShip(ship *Spaceship, dir SpaceshipDirection) {
+func movePlayerShip(ship *Spaceship, dir SpaceshipDirection, delta float32) {
 	switch dir {
 	case Up:
-		ship.Y -= velocity
+		ship.Y -= velocity * delta
 	case UpLeft:
-		ship.X -= diagonalVelocity
-		ship.Y -= diagonalVelocity
+		ship.X -= diagonalVelocity * delta
+		ship.Y -= diagonalVelocity * delta
 	case UpRight:
-		ship.X += diagonalVelocity
-		ship.Y -= diagonalVelocity
+		ship.X += diagonalVelocity * delta
+		ship.Y -= diagonalVelocity * delta
 	case Down:
-		ship.Y += velocity
+		ship.Y += velocity * delta
 	case DownLeft:
-		ship.X -= diagonalVelocity
-		ship.Y += diagonalVelocity
+		ship.X -= diagonalVelocity * delta
+		ship.Y += diagonalVelocity * delta
 	case DownRight:
-		ship.X += diagonalVelocity
-		ship.Y += diagonalVelocity
+		ship.X += diagonalVelocity * delta
+		ship.Y += diagonalVelocity * delta
 	case Left:
-		ship.X -= velocity
+		ship.X -= velocity * delta
 	case Right:
-		ship.X += velocity
+		ship.X += velocity * delta
 	}
 }
 
-func moveProjectile(proj *Projectile) {
-	proj.Y += proj.velocity
+func moveProjectile(proj *Projectile, delta float32) {
+	proj.Y += proj.velocity * delta
 }

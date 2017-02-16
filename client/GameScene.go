@@ -19,6 +19,8 @@ func (*gameScene) Preload() {
 	engo.Files.Load("textures/ship.png")
 	engo.Files.Load("textures/bullet.png")
 	engo.Files.Load("textures/starfield.png")
+	engo.Files.Load("textures/gopher.png")
+	engo.Files.Load("fonts/DroidSerif.ttf")
 }
 
 func (scene *gameScene) Setup(world *ecs.World) {
@@ -30,14 +32,20 @@ func (scene *gameScene) Setup(world *ecs.World) {
 	renderSystem := &common.RenderSystem{}
 	world.AddSystem(renderSystem)
 
-	// setup the Updater
-	updater := &entityUpdater{decoder: gob.NewDecoder(scene.serverConnection)}
-	world.AddSystem(updater)
+	// add font
+	fnt := common.Font{
+		URL:  "fonts/DroidSerif.ttf",
+		FG:   color.White,
+		Size: 18,
+	}
 
-	inputController := &inputController{encoder: gob.NewEncoder(scene.serverConnection)}
-	world.AddSystem(inputController)
+	fnt.CreatePreloaded()
 
-	common.SetBackground(color.Black)
+	fontUpdate := fontUpdater{BasicEntity: ecs.NewBasic(), font: fnt}
+	fontUpdate.SpaceComponent = common.SpaceComponent{
+		Position: engo.Point{X: 0, Y: windowHeight - 30},
+	}
+	fontUpdate.SetShader(common.HUDShader)
 
 	// add background texture
 	basicEntity := ecs.NewBasic()
@@ -52,4 +60,14 @@ func (scene *gameScene) Setup(world *ecs.World) {
 		Height:   windowHeight,
 	}
 	renderSystem.Add(&basicEntity, &renderComponent, &spaceComponent)
+
+	// setup the Updater
+	updater := &entityUpdater{decoder: gob.NewDecoder(scene.serverConnection), fontUpdater: &fontUpdate}
+	world.AddSystem(updater)
+
+	inputController := &inputController{encoder: gob.NewEncoder(scene.serverConnection)}
+	world.AddSystem(inputController)
+
+	common.SetBackground(color.Black)
+
 }

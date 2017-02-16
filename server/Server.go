@@ -6,6 +6,8 @@ import (
 	"net"
 	"os"
 
+	"time"
+
 	"github.com/Alekssasho/GopherInvaders/core"
 )
 
@@ -48,6 +50,7 @@ func StartServer(numPlayers int) {
 
 	fmt.Println("[Server] Starting game")
 	world.Start()
+	currentTime := time.Now()
 	for {
 		// first we receive input from all client
 		//fmt.Println("[Server] Receive dir")
@@ -58,7 +61,8 @@ func StartServer(numPlayers int) {
 
 		// second update the world
 		//fmt.Println("[Server] Update world")
-		world.Update(dirs)
+		world.Update(dirs, float32(time.Since(currentTime).Seconds()))
+		currentTime = time.Now()
 
 		// third send updated state to clients
 		//fmt.Println("[Server] Send state")
