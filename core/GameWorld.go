@@ -75,7 +75,7 @@ func (world *GameWorld) Update(dirs []SpaceshipDirection) {
 		case <-world.playerShipData[i].fire:
 			obj := &world.PlayerShips[i].ObjectDimensions
 			id := world.getNextID()
-			world.PlayerAmmos = append(world.PlayerAmmos, newProjectile(id, obj.X+obj.height/2, obj.Y, PlayerAmmo, -10))
+			world.PlayerAmmos = append(world.PlayerAmmos, newProjectile(id, obj.X+obj.width/2-AmmoWidth/2, obj.Y, PlayerAmmo, -10))
 			world.NewGameObjects = append(world.NewGameObjects, GameObjectUpdate{Type: Ammo, ID: id})
 		default:
 		}

@@ -51,8 +51,8 @@ type Projectile struct {
 const (
 	PlayerShipWidth  = 64
 	PlayerShipHeight = 64
-	AmmoWidth        = 8
-	AmmoHeight       = 8
+	AmmoWidth        = 12
+	AmmoHeight       = 12
 )
 
 func newPlayerShip(id uint64, x, y float32) Spaceship {

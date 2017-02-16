@@ -17,6 +17,8 @@ type gameScene struct {
 func (*gameScene) Type() string { return "Game Scene" }
 func (*gameScene) Preload() {
 	engo.Files.Load("textures/ship.png")
+	engo.Files.Load("textures/bullet.png")
+	engo.Files.Load("textures/starfield.png")
 }
 
 func (scene *gameScene) Setup(world *ecs.World) {
@@ -25,7 +27,8 @@ func (scene *gameScene) Setup(world *ecs.World) {
 	engo.Input.RegisterButton("MoveUp", engo.ArrowUp)
 	engo.Input.RegisterButton("MoveDown", engo.ArrowDown)
 
-	world.AddSystem(&common.RenderSystem{})
+	renderSystem := &common.RenderSystem{}
+	world.AddSystem(renderSystem)
 
 	// setup the Updater
 	updater := &entityUpdater{decoder: gob.NewDecoder(scene.serverConnection)}
@@ -34,5 +37,19 @@ func (scene *gameScene) Setup(world *ecs.World) {
 	inputController := &inputController{encoder: gob.NewEncoder(scene.serverConnection)}
 	world.AddSystem(inputController)
 
-	common.SetBackground(color.White)
+	common.SetBackground(color.Black)
+
+	// add background texture
+	basicEntity := ecs.NewBasic()
+	backgroundTexture, _ := common.LoadedSprite("textures/starfield.png")
+	renderComponent := common.RenderComponent{
+		Drawable: backgroundTexture,
+		Scale:    engo.Point{X: windowWidth / backgroundTexture.Width(), Y: windowHeight / backgroundTexture.Height()},
+	}
+	spaceComponent := common.SpaceComponent{
+		Position: engo.Point{X: 0, Y: 0},
+		Width:    windowWidth,
+		Height:   windowHeight,
+	}
+	renderSystem.Add(&basicEntity, &renderComponent, &spaceComponent)
 }
